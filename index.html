@@ -6,10 +6,12 @@
     <title>提案資料 - 株式会社GRT</title>
     <style>
         body, html { margin: 0; padding: 0; background: #000; overflow: hidden; font-family: sans-serif; }
+        
+        /* スライドコンテナ */
         .container {
             width: 100vw; height: 100vh;
             overflow-y: scroll; scroll-snap-type: y mandatory;
-            scroll-behavior: smooth; /* ボタン移動をなめらかにする */
+            scroll-behavior: smooth;
         }
         .slide {
             width: 100vw; height: 100vh;
@@ -22,40 +24,42 @@
         }
         video { position: relative; z-index: 2; max-width: 60%; border-radius: 10px; }
         
-        /* 開始ボタン */
+        /* 開始オーバーレイ（最前面に配置） */
         #overlay {
             position: fixed; top:0; left:0; width:100%; height:100%;
-            background: rgba(0,0,0,0.9); z-index: 100;
+            background: rgba(0,0,0,0.9); z-index: 1000; /* Z指数を最大に */
             display: flex; flex-direction: column; justify-content: center; align-items: center; color: white;
         }
+        .start-btn {
+            padding: 20px 50px; font-size: 1.5rem; cursor: pointer;
+            background: #00a0e9; color: white; border: none; border-radius: 50px;
+            box-shadow: 0 0 20px rgba(0,160,233,0.6);
+        }
 
-        /* 次へ・戻るボタンのスタイル */
+        /* 次へ・戻るボタン（オーバーレイよりは下に配置） */
         .nav-btn {
-            position: fixed; z-index: 50; top: 50%; transform: translateY(-50%);
-            background: rgba(255,255,255,0.2); color: white; border: none;
-            padding: 20px 15px; cursor: pointer; font-size: 24px; border-radius: 5px;
+            position: fixed; z-index: 500; top: 50%; transform: translateY(-50%);
+            background: rgba(0, 160, 233, 0.7); /* 青色で見やすく */
+            color: white; border: none; width: 60px; height: 60px;
+            cursor: pointer; font-size: 30px; border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
             transition: 0.3s;
         }
-        .nav-btn:hover { background: rgba(255,255,255,0.5); }
-        .prev-btn { left: 10px; }
-        .next-btn { right: 10px; }
-
-        button.start-btn {
-            padding: 18px 45px; font-size: 1.2rem; cursor: pointer;
-            background: #00a0e9; color: white; border: none; border-radius: 30px;
-        }
+        .nav-btn:hover { background: rgba(0, 160, 233, 1); scale: 1.1; }
+        .prev-btn { left: 20px; }
+        .next-btn { right: 20px; }
     </style>
 </head>
 <body>
 
 <div id="overlay">
     <h2>Presentation for Salford & Co.</h2>
-    <p>ボタンまたはスクロールで次へ進みます</p>
-    <button class="start-btn" onclick="start()">プレゼンテーションを開始する</button>
+    <p style="margin-bottom: 20px;">クリックしてプレゼンを開始してください</p>
+    <button class="start-btn" onclick="start()">開始する</button>
 </div>
 
-<button class="nav-btn prev-btn" onclick="moveSlide(-1)">❮</button>
-<button class="nav-btn next-btn" onclick="moveSlide(1)">❯</button>
+<button class="nav-btn prev-btn" onclick="moveSlide(-1)" aria-label="前へ">❮</button>
+<button class="nav-btn next-btn" onclick="moveSlide(1)" aria-label="次へ">❯</button>
 
 <div class="container" id="slider">
     <section class="slide"><img src="1.jpg" class="bg-img"><audio src="7188360124250015.mp3"></audio></section>
@@ -73,5 +77,36 @@
 <script>
     const slider = document.getElementById('slider');
 
+    // 開始ボタンの設定
     function start() {
-        document.getElementById('overlay').style.
+        document.getElementById('overlay').style.display = 'none';
+        // 最初の音声を再生
+        const firstAudio = document.querySelector('audio');
+        if(firstAudio) firstAudio.play().catch(e => console.log("Audio play failed:", e));
+    }
+
+    // ボタンで移動する設定
+    function moveSlide(direction) {
+        const slideHeight = window.innerHeight;
+        slider.scrollBy({ top: direction * slideHeight, behavior: 'smooth' });
+    }
+
+    // スクロール検知で自動再生する設定
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            const v = entry.target.querySelector('video');
+            const a = entry.target.querySelector('audio');
+            if (entry.isIntersecting) {
+                if(v) v.play(); if(a) a.play();
+            } else {
+                if(v) { v.pause(); v.currentTime = 0; }
+                if(a) { a.pause(); a.currentTime = 0; }
+            }
+        });
+    }, { threshold: 0.6 });
+
+    document.querySelectorAll('.slide').forEach(s => observer.observe(s));
+</script>
+
+</body>
+</html>
